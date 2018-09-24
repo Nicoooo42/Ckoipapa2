@@ -2,10 +2,13 @@ package com.ckoipapa.com.ckoipapa.web;
 
 import com.ckoipapa.com.ckoipapa.dao.ClientRepository;
 import com.ckoipapa.com.ckoipapa.entities.Client;
+import com.ckoipapa.com.ckoipapa.storage.FileStorage;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -20,42 +23,23 @@ import java.util.Optional;
 @RestController
 public class UploadRestService {
 
-    private static String UPLOADED_FOLDER = "C://Users//nlam1//Desktop//temp//";
-
-    @PostMapping("/api/upload")
-    //@ResponseBody
-    public ResponseEntity<?> uploadFile(
-            @RequestParam("file") MultipartFile uploadfile) {
-
-        if (uploadfile.isEmpty()) {
-            return new ResponseEntity("please select a file!", HttpStatus.OK);
-        }
-        try {
-            saveUploadedFiles(Arrays.asList(uploadfile));
-        } catch (IOException e) {
-            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-        }
-
-        return new ResponseEntity("Successfully uploaded - " +
-                uploadfile.getOriginalFilename(), new HttpHeaders(), HttpStatus.OK);
-
+	@Autowired
+	FileStorage fileStorage;
+	
+    @GetMapping("/")
+    public String index() {
+        return "multipartfile/uploadform.html";
     }
-
-    private void saveUploadedFiles(List<MultipartFile> files) throws IOException {
-
-        for (MultipartFile file : files) {
-
-            if (file.isEmpty()) {
-                continue; //next pls
-            }
-
-            byte[] bytes = file.getBytes();
-            Path path = Paths.get(UPLOADED_FOLDER + file.getOriginalFilename());
-            Files.write(path, bytes);
-
-        }
-
+    
+    @PostMapping("/upload")
+    public String uploadMultipartFile(@RequestParam("uploadfile") MultipartFile file, Model model) {
+		try {
+			fileStorage.store(file);
+			model.addAttribute("message", "File uploaded successfully! -> filename = " + file.getOriginalFilename());
+		} catch (Exception e) {
+			model.addAttribute("message", "Fail! -> uploaded filename: " + file.getOriginalFilename());
+		}
+        return "multipartfile/uploadform.html";
     }
-
 
 }
